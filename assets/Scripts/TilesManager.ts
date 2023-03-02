@@ -14,10 +14,12 @@ export class TilesManager extends Component {
   @property({ type: Prefab })
   public tileYellow: Prefab | null = null;
 
-  public arrTiles: any[] = [];
-  public arrWillDestroyTiles: any[] = [];
-  public needRefillArr: boolean = false;
-  public needRegenerateTiles: boolean = false;
+  private arrTiles: any[] = [];
+  private arrWillDestroyTiles: any[] = [];
+  public amountDestroyTile: number = 0;
+
+  private needRefillArr: boolean = false;
+  private needRegenerateTiles: boolean = false;
 
   fillArrTiles = (firstTime: boolean = false): void => {
     for (let i = 0; i < 9; i++) {
@@ -121,7 +123,7 @@ export class TilesManager extends Component {
     this.arrWillDestroyTiles = [];
     // event.target.destroy()
     // console.log(col, row, type);
-    console.log(event.target);
+    // console.log(event.target);
     const cb = (): void => {
       if (this.arrWillDestroyTiles.length >= 2) {
         this.destroyTiles();
@@ -133,11 +135,12 @@ export class TilesManager extends Component {
     };
     this.findSameColorBorderTile(col, row, type, cb);
 
-    console.log(this.arrWillDestroyTiles);
+    // console.log(this.arrWillDestroyTiles);
     // console.log(this.arrTiles);
   }
 
   destroyTiles = (): void => {
+    this.amountDestroyTile = this.arrWillDestroyTiles.length;
     this.arrWillDestroyTiles.forEach((item) => {
       const { col, row } = item;
       this.arrTiles[col][row] = null;
