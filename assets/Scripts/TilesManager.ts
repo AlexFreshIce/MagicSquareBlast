@@ -17,14 +17,15 @@ export class TilesManager extends Component {
   private arrTiles: any[] = [];
   private arrWillDestroyTiles: any[] = [];
   public amountDestroyTile: number = 0;
-
+  public maxFieldCol: number = 9;
+  public maxFieldRow: number = 9;
   private needRefillArr: boolean = false;
   private needRegenerateTiles: boolean = false;
 
   fillArrTiles = (firstTime: boolean = false): void => {
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < this.maxFieldCol; i++) {
       firstTime ? (this.arrTiles[i] = []) : null;
-      for (let j = 0; j < 9; j++) {
+      for (let j = 0; j < this.maxFieldRow; j++) {
         // console.log(`i = ${i}, j = ${j}`);
         if (!this.arrTiles[i][j]) {
           const tileType = this.createRandomTileType();
@@ -58,8 +59,8 @@ export class TilesManager extends Component {
   };
 
   generateTiles = (): void => {
-    for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
+    for (let i = 0; i < this.maxFieldCol; i++) {
+      for (let j = 0; j < this.maxFieldRow; j++) {
         // console.log(`i = ${i}, j = ${j}`);
         if (!this.arrTiles[i][j].drawStatus) {
           const tile = this.spawnTileByType(this.arrTiles[i][j].type);
@@ -73,13 +74,13 @@ export class TilesManager extends Component {
     }
   };
 
-  setTilePos = (tile: Node, i: number, j: number) => {
+  setTilePos = (tile: Node, i: number, j: number):void => {
     const x = j * 46 + 32;
     const y = -(i * 50) - 39;
     tile.setPosition(x, y, 0);
   };
 
-  spawnTileByType = (type: string) => {
+  spawnTileByType = (type: string):any => {
     switch (type) {
       case "tileBlue":
         return instantiate(this.tileBlue);
@@ -150,7 +151,7 @@ export class TilesManager extends Component {
     this.needRefillArr = true;
   };
 
-  startGame = () => {
+  startGame = (): void => {
     this.fillArrTiles(true);
     if (this.needRegenerateTiles) {
       this.needRegenerateTiles = false;
@@ -158,8 +159,22 @@ export class TilesManager extends Component {
     }
   };
 
+  endGame = (): void => {
+    this.node.children.forEach((tile) =>
+      tile.off(Node.EventType.TOUCH_START, this.onTilePress, this)
+    );
+  };
+
+  restartGame = (): void => {
+    this.arrTiles = [];
+    this.arrWillDestroyTiles = [];
+    this.amountDestroyTile = 0;
+    this.needRefillArr = false;
+    this.needRegenerateTiles = false;
+  };
+
   onLoad() {}
-  
+
   start() {}
 
   update(deltaTime: number) {

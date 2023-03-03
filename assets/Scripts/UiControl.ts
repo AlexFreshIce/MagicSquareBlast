@@ -9,26 +9,43 @@ export class UiControl extends Component {
   public reqScoreLabel: Label | null = null;
   @property({ type: Label })
   public moveValLabel: Label | null = null;
-  // @property
-  public curScore: number = 0;
-  public reqScore: number = 100;
-  public moveValue: number = 20;
+  @property({ type: Label })
+  public resoultLabel: Label | null = null;
 
-  changeCurScore = (score: number):void => {
+  // @property
+
+  public reqScore: number = 10;
+  public startMoveValue: number = 2;
+  // public reqScore: number = 100;
+  // public startMoveValue: number = 20;
+
+  public curScore: number = 0;
+  public curMoveValue: number | null = null;
+
+  changeCurScore = (score: number): void => {
     const resoult = +this.curScoreLabel.string + score;
+    this.curScore = resoult;
     this.curScoreLabel.string = `${resoult}`;
   };
 
-  changeMoveValue = ():void => {
+  changeMoveValue = (): void => {
     const resoult = +this.moveValLabel.string - 1;
+    this.curMoveValue = resoult;
     this.moveValLabel.string = `${resoult}`;
   };
 
+  chamgeResoultLabelValue = (value: string) => {
+    this.resoultLabel.string = value;
+  };
 
-  startGame = ():void => {
+  startGame = (): void => {
     this.curScoreLabel.string = `${this.curScore}`;
     this.reqScoreLabel.string = `${this.reqScore}`;
-    this.moveValLabel.string = `${this.moveValue}`;
+    this.moveValLabel.string = `${this.startMoveValue}`;
+  };
+
+  restartGame = (): void => {
+    this.curMoveValue = null;
   };
 
   onLoad() {}
