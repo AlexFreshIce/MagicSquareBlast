@@ -20,16 +20,18 @@ export class UiControl extends Component {
   };
 
   changeMoveValue = ():void => {
-    console.log("move");
     const resoult = +this.moveValLabel.string - 1;
     this.moveValLabel.string = `${resoult}`;
   };
 
-  start() {
+
+  startGame = ():void => {
     this.curScoreLabel.string = `${this.curScore}`;
     this.reqScoreLabel.string = `${this.reqScore}`;
     this.moveValLabel.string = `${this.moveValue}`;
-  }
+  };
 
+  onLoad() {}
+  start() {}
   update(deltaTime: number) {}
 }

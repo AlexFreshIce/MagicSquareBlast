@@ -134,9 +134,6 @@ export class TilesManager extends Component {
       }
     };
     this.findSameColorBorderTile(col, row, type, cb);
-
-    // console.log(this.arrWillDestroyTiles);
-    // console.log(this.arrTiles);
   }
 
   destroyTiles = (): void => {
@@ -150,33 +147,29 @@ export class TilesManager extends Component {
       );
       this.node.children[index].destroy();
     });
-    // console.log(this.arrTiles);
     this.needRefillArr = true;
   };
 
-  onLoad() {
+  startGame = () => {
     this.fillArrTiles(true);
     if (this.needRegenerateTiles) {
       this.needRegenerateTiles = false;
       this.generateTiles();
     }
-  }
+  };
 
+  onLoad() {}
+  
   start() {}
 
   update(deltaTime: number) {
     if (this.needRefillArr) {
       this.needRefillArr = false;
       this.fillArrTiles();
-      // setTimeout(this.fillArrTiles, 1);
-      // console.log("fill");
     }
     if (this.needRegenerateTiles) {
       this.needRegenerateTiles = false;
       this.generateTiles();
-      // console.log("gener");
-      // console.log(this.arrTiles);
-      // setTimeout(this.generateTiles, 1);
     }
   }
 }
