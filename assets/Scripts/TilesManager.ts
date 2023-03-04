@@ -1,5 +1,20 @@
-import { _decorator, Component, Prefab, instantiate, Node } from "cc";
+import {
+  _decorator,
+  Component,
+  Prefab,
+  instantiate,
+  Node,
+  tween,
+  Vec2,
+  Vec3,
+  Tween,
+  EventTarget,
+  Quat,
+} from "cc";
+
 const { ccclass, property } = _decorator;
+
+const eventTarget = new EventTarget();
 
 @ccclass("TilesManager")
 export class TilesManager extends Component {
@@ -63,10 +78,10 @@ export class TilesManager extends Component {
       for (let j = 0; j < this.maxFieldRow; j++) {
         // console.log(`i = ${i}, j = ${j}`);
         if (!this.arrTiles[i][j].drawStatus) {
-          const tile = this.spawnTileByType(this.arrTiles[i][j].type);
+          const tile = this.instantiateTileByType(this.arrTiles[i][j].type);
           this.node.addChild(tile);
-          this.setTilePos(tile, i, j);
           tile.curNumber = `${i}${j}`;
+          this.setTilePos(tile, i, j);
           tile.on(Node.EventType.TOUCH_START, this.onTilePress, this);
           this.arrTiles[i][j].drawStatus = true;
         } else continue;
@@ -74,13 +89,44 @@ export class TilesManager extends Component {
     }
   };
 
-  setTilePos = (tile: Node, i: number, j: number):void => {
-    const x = j * 46 + 32;
-    const y = -(i * 50) - 39;
-    tile.setPosition(x, y, 0);
+  setTilePos = (tile: Node, i: number, j: number): void => {
+    const spy = -39;
+    const fpx = j * 46 + 32;
+    const fpy = -(i * 50) - 39;
+    this.tweenSpawnTile(tile, spy, fpx, fpy);
+    // tile.setPosition(x, y, 0);
+    // tile.setPosition(fpx, fpy, 0);
   };
 
-  spawnTileByType = (type: string):any => {
+  tweenSpawnTile = (tile: any, spy:number, fpx:number, fpy:number) => {
+    tween(tile.position)
+      .set(new Vec3(fpx, spy))
+
+      .to(0.3, new Vec2(fpx, fpy), {
+        // easing: "backIn",
+        onUpdate: (target: Vec2, ratio: number) => {
+          tile.position = target;
+        },
+      })
+      .start();
+  };
+
+  tweendestroyTile = (tile:any, cb:Function| null = null ):void => {
+    let quat: Quat = new Quat();
+    Quat.fromEuler(quat, 0, 0, 120);
+
+    tween(tile.rotation)
+      .to(0.2, quat, {
+        // easing: "backIn",
+        onUpdate: (target: Quat, ratio: number) => {
+          tile.rotation = target;
+        },
+      })
+      .call(cb)
+      .start();
+  };
+
+  instantiateTileByType = (type: string): any => {
     switch (type) {
       case "tileBlue":
         return instantiate(this.tileBlue);
@@ -99,7 +145,7 @@ export class TilesManager extends Component {
     col: number,
     row: number,
     type: string,
-    cb: () => void | null = null
+    cb: Function | null = null
   ) => {
     if (col < 0 || col > 8 || row < 0 || row > 8) {
       return;
@@ -146,7 +192,13 @@ export class TilesManager extends Component {
       const index = this.node.children.findIndex(
         (i) => i.curNumber === curNumber
       );
-      this.node.children[index].destroy();
+
+      const cb = () => {
+        this.node.children[index].destroy();
+      };
+
+      this.tweendestroyTile(this.node.children[index], cb);
+      // this.node.children[index].destroy();
     });
     this.needRefillArr = true;
   };
@@ -171,6 +223,8 @@ export class TilesManager extends Component {
     this.amountDestroyTile = 0;
     this.needRefillArr = false;
     this.needRegenerateTiles = false;
+    this.node.removeAllChildren();
+    Tween.stopAll();
   };
 
   onLoad() {}
