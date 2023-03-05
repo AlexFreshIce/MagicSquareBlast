@@ -46,7 +46,7 @@ export class GameManager extends Component {
 
       case GameState.GS_END:
         if (this.finalResoult) {
-          this.gameField.endGame();
+          this.gameField.allEventListenersOff();
           this.finalResoult.active = true;
         }
         break;

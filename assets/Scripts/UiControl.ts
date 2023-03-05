@@ -14,8 +14,8 @@ export class UiControl extends Component {
 
   // @property
 
-  public reqScore: number = 10;
-  public startMoveValue: number = 2;
+  public reqScore: number = 20;
+  public startMoveValue: number = 10;
   // public reqScore: number = 100;
   // public startMoveValue: number = 20;
 

@@ -8,13 +8,10 @@ import {
   Vec2,
   Vec3,
   Tween,
-  EventTarget,
   Quat,
 } from "cc";
 
 const { ccclass, property } = _decorator;
-
-const eventTarget = new EventTarget();
 
 @ccclass("TilesManager")
 export class TilesManager extends Component {
@@ -36,12 +33,12 @@ export class TilesManager extends Component {
   public maxFieldRow: number = 9;
   private needRefillArr: boolean = false;
   private needRegenerateTiles: boolean = false;
+  private needMoveTiles: boolean = false;
 
   fillArrTiles = (firstTime: boolean = false): void => {
     for (let i = 0; i < this.maxFieldCol; i++) {
       firstTime ? (this.arrTiles[i] = []) : null;
       for (let j = 0; j < this.maxFieldRow; j++) {
-        // console.log(`i = ${i}, j = ${j}`);
         if (!this.arrTiles[i][j]) {
           const tileType = this.createRandomTileType();
           this.arrTiles[i][j] = {
@@ -55,6 +52,27 @@ export class TilesManager extends Component {
       }
     }
     this.needRegenerateTiles = true;
+  };
+
+  moveTilesAfterDestr = (): void => {
+    for (let i = this.maxFieldCol - 1; i >= 0; i--) {
+      let freeSpace = 0;
+      for (let j = this.maxFieldRow - 1; j >= 0; j--) {
+        if (!this.arrTiles[i][j]) {
+          freeSpace++;
+        } else if (freeSpace > 0) {
+          this.arrTiles[i][j + freeSpace] = this.arrTiles[i][j];
+          this.arrTiles[i][j] = null;
+          this.arrTiles[i][j + freeSpace].row = j + freeSpace;
+          const index = this.getIndexByCurNumber(null, i, j);
+          const tile = this.node.children[index];
+          tile.curNumber = `${i}${j + freeSpace}`;
+          // this.node.children[index].curNumber = `${i}${j + freeSpace}`;
+          this.setTilePos(tile, i, j + freeSpace, tile.position.y);
+        }
+      }
+    }
+    this.needRefillArr = true;
   };
 
   createRandomTileType = (): string => {
@@ -76,54 +94,85 @@ export class TilesManager extends Component {
   generateTiles = (): void => {
     for (let i = 0; i < this.maxFieldCol; i++) {
       for (let j = 0; j < this.maxFieldRow; j++) {
-        // console.log(`i = ${i}, j = ${j}`);
         if (!this.arrTiles[i][j].drawStatus) {
           const tile = this.instantiateTileByType(this.arrTiles[i][j].type);
           this.node.addChild(tile);
+
           tile.curNumber = `${i}${j}`;
           this.setTilePos(tile, i, j);
-          tile.on(Node.EventType.TOUCH_START, this.onTilePress, this);
+          // tile.on(Node.EventType.TOUCH_START, this.onTilePress, this);
           this.arrTiles[i][j].drawStatus = true;
         } else continue;
       }
     }
   };
 
-  setTilePos = (tile: Node, i: number, j: number): void => {
-    const spy = -39;
-    const fpx = j * 46 + 32;
-    const fpy = -(i * 50) - 39;
-    this.tweenSpawnTile(tile, spy, fpx, fpy);
-    // tile.setPosition(x, y, 0);
+  setTilePos = (
+    tile: Node,
+    i: number,
+    j: number,
+    spy: number = 12
+    // cb1: Function | null = null,
+    // cb2: Function | null = null
+  ): void => {
+    const fpx = i * 46 + 32;
+    const fpy = -(j * 50) - 39;
+    const cb = () => {
+      tile.on(Node.EventType.TOUCH_START, this.onTilePress, this);
+    };
+    // const cb1 = () => {
+    tile.off(Node.EventType.TOUCH_START, this.onTilePress, this);
+    // };
+
+    this.tweenMoveTile(tile, spy, fpx, fpy, cb);
     // tile.setPosition(fpx, fpy, 0);
   };
 
-  tweenSpawnTile = (tile: any, spy:number, fpx:number, fpy:number) => {
+  tweenMoveTile = (
+    tile: any,
+    spy: number,
+    fpx: number,
+    fpy: number,
+    cb: Function | null = null
+  ) => {
     tween(tile.position)
-      .set(new Vec3(fpx, spy))
-
-      .to(0.3, new Vec2(fpx, fpy), {
-        // easing: "backIn",
-        onUpdate: (target: Vec2, ratio: number) => {
+      .set(new Vec3(fpx, spy, 0))
+      .to(0.4, new Vec3(fpx, fpy, 0), {
+        // easing: "expoOut",
+        // easing: "circOut",
+        easing: "cubicOut",
+        onUpdate: (target: Vec3, ratio: number) => {
           tile.position = target;
         },
+        onComplete: (target?: object) => {
+          cb();
+        },
       })
+      // .call(cb)
       .start();
   };
 
-  tweendestroyTile = (tile:any, cb:Function| null = null ):void => {
+  tweendestroyTile = (tile: any, cb: Function | null = null): void => {
     let quat: Quat = new Quat();
-    Quat.fromEuler(quat, 0, 0, 120);
-
-    tween(tile.rotation)
-      .to(0.2, quat, {
-        // easing: "backIn",
-        onUpdate: (target: Quat, ratio: number) => {
-          tile.rotation = target;
-        },
-      })
-      .call(cb)
-      .start();
+    Quat.fromEuler(quat, 0, 0, 140);
+    if (tile) {
+      tween(tile.rotation)
+        .to(0.1, quat, {
+          // easing: "backIn",
+          // easing: "elasticInOut",
+          onStart: (target?: object) => {
+            tile.scale = new Vec3(0.6, 0.6, 0);
+          },
+          onUpdate: (target: Quat, ratio: number) => {
+            tile.rotation = target;
+          },
+          onComplete: (target?: object) => {
+            cb();
+          },
+        })
+        // .call(cb)
+        .start();
+    }
   };
 
   instantiateTileByType = (type: string): any => {
@@ -151,7 +200,7 @@ export class TilesManager extends Component {
       return;
     }
     const tile = this.arrTiles[col][row];
-    if (!tile.checked && tile.type === type) {
+    if (tile && !tile.checked && tile.type === type) {
       this.arrWillDestroyTiles.push(tile);
       tile.checked = true;
       this.findSameColorBorderTile(col + 1, row, type);
@@ -168,9 +217,8 @@ export class TilesManager extends Component {
     const row = +event.target.curNumber[1];
     const type = event.target.name;
     this.arrWillDestroyTiles = [];
-    // event.target.destroy()
-    // console.log(col, row, type);
     // console.log(event.target);
+    // console.log(this.arrTiles);
     const cb = (): void => {
       if (this.arrWillDestroyTiles.length >= 2) {
         this.destroyTiles();
@@ -183,24 +231,32 @@ export class TilesManager extends Component {
     this.findSameColorBorderTile(col, row, type, cb);
   }
 
+  getIndexByCurNumber = (
+    item: { col: number; row: number } | null = null,
+    col: number | null = null,
+    row: number | null = null
+  ): number => {
+    const curNumber = item ? `${item.col}${item.row}` : `${col}${row}`;
+    const index = this.node.children.findIndex(
+      (i) => i.curNumber === curNumber
+    );
+    return index;
+  };
+
   destroyTiles = (): void => {
     this.amountDestroyTile = this.arrWillDestroyTiles.length;
     this.arrWillDestroyTiles.forEach((item) => {
       const { col, row } = item;
+      const index = this.getIndexByCurNumber(item);
+      const tile = this.node.children[index];
+      // tile.destroy();
       this.arrTiles[col][row] = null;
-      const curNumber = `${col}${row}`;
-      const index = this.node.children.findIndex(
-        (i) => i.curNumber === curNumber
-      );
-
       const cb = () => {
-        this.node.children[index].destroy();
+        tile.destroy();
       };
-
-      this.tweendestroyTile(this.node.children[index], cb);
-      // this.node.children[index].destroy();
+      this.tweendestroyTile(tile, cb);
     });
-    this.needRefillArr = true;
+    this.needMoveTiles = true;
   };
 
   startGame = (): void => {
@@ -211,7 +267,7 @@ export class TilesManager extends Component {
     }
   };
 
-  endGame = (): void => {
+  allEventListenersOff = (): void => {
     this.node.children.forEach((tile) =>
       tile.off(Node.EventType.TOUCH_START, this.onTilePress, this)
     );
@@ -232,6 +288,12 @@ export class TilesManager extends Component {
   start() {}
 
   update(deltaTime: number) {
+    if (this.needMoveTiles) {
+      this.needMoveTiles = false;
+      this.moveTilesAfterDestr();
+      // console.log(this.arrTiles);
+      // console.log(this.node.children);
+    }
     if (this.needRefillArr) {
       this.needRefillArr = false;
       this.fillArrTiles();
