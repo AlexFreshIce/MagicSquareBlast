@@ -16,21 +16,22 @@ const { ccclass, property } = _decorator;
 @ccclass("TilesManager")
 export class TilesManager extends Component {
   @property({ type: Prefab })
-  public tileBlue: Prefab | null = null;
+  private tileBlue: Prefab | null = null;
   @property({ type: Prefab })
-  public tileGreen: Prefab | null = null;
+  private tileGreen: Prefab | null = null;
   @property({ type: Prefab })
-  public tilePurple: Prefab | null = null;
+  private tilePurple: Prefab | null = null;
   @property({ type: Prefab })
-  public tileRed: Prefab | null = null;
+  private tileRed: Prefab | null = null;
   @property({ type: Prefab })
-  public tileYellow: Prefab | null = null;
+  private tileYellow: Prefab | null = null;
 
   private arrTiles: any[] = [];
   private arrWillDestroyTiles: any[] = [];
   public amountDestroyTile: number = 0;
   public maxFieldCol: number = 9;
   public maxFieldRow: number = 9;
+  public minTilesToDestr: number = 2;
   private needRefillArr: boolean = false;
   private needRegenerateTiles: boolean = false;
   private needMoveTiles: boolean = false;
@@ -220,7 +221,7 @@ export class TilesManager extends Component {
     // console.log(event.target);
     // console.log(this.arrTiles);
     const cb = (): void => {
-      if (this.arrWillDestroyTiles.length >= 2) {
+      if (this.arrWillDestroyTiles.length >= this.minTilesToDestr) {
         this.destroyTiles();
       } else {
         this.arrWillDestroyTiles.forEach((tile) => {
@@ -271,6 +272,33 @@ export class TilesManager extends Component {
     this.node.children.forEach((tile) =>
       tile.off(Node.EventType.TOUCH_START, this.onTilePress, this)
     );
+  };
+
+  mixCurrentTitles = () => {
+    const halfArr = Math.floor(this.maxFieldRow / 2);
+    // this.arrTiles.reverse();
+    // for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < this.maxFieldCol; i++) {
+      // if (i % 2 == 0) {
+      if (Math.random()<0.5?0:1) {
+        this.arrTiles[i].reverse();
+      }
+      for (let j = 0; j < halfArr; j++) {
+        if (this.arrTiles[i][j].drawStatus) {
+          const { col, row } = this.arrTiles[i][j];
+          const index1 = this.getIndexByCurNumber(null, i, j);
+          const tile1 = this.node.children[index1];
+          const index2 = this.getIndexByCurNumber(null, col, row);
+          const tile2 = this.node.children[index2];
+          this.arrTiles[i][j].row = j;
+          this.arrTiles[col][row].row = row;
+          this.setTilePos(tile1, col, row, tile1.position.y);
+          this.setTilePos(tile2, i, j, tile2.position.y);
+          tile1.curNumber = `${col}${row}`;
+          tile2.curNumber = `${i}${j}`;
+        } else continue;
+      }
+    }
   };
 
   restartGame = (): void => {

@@ -1,51 +1,56 @@
-import { _decorator, Component, Node, Label } from "cc";
+import { _decorator, Component, Label, Button } from "cc";
 const { ccclass, property } = _decorator;
 
 @ccclass("UiControl")
 export class UiControl extends Component {
   @property({ type: Label })
-  public curScoreLabel: Label | null = null;
+  private curScoreLabel: Label | null = null;
   @property({ type: Label })
-  public reqScoreLabel: Label | null = null;
+  private reqScoreLabel: Label | null = null;
   @property({ type: Label })
-  public moveValLabel: Label | null = null;
+  private moveValLabel: Label | null = null;
   @property({ type: Label })
-  public resoultLabel: Label | null = null;
-
+  private resoultLabel: Label | null = null;
+  @property({ type: Label })
+  private bonusMixCountLabel: Label | null = null;
+  @property({ type: Button })
+  private bonusMixBtn: Button | null = null;
   // @property
 
-  public reqScore: number = 20;
-  public startMoveValue: number = 10;
-  // public reqScore: number = 100;
-  // public startMoveValue: number = 20;
-
-  public curScore: number = 0;
-  public curMoveValue: number | null = null;
-
   changeCurScore = (score: number): void => {
-    const resoult = +this.curScoreLabel.string + score;
-    this.curScore = resoult;
-    this.curScoreLabel.string = `${resoult}`;
+    this.curScoreLabel.string = score.toString();
   };
 
-  changeMoveValue = (): void => {
-    const resoult = +this.moveValLabel.string - 1;
-    this.curMoveValue = resoult;
-    this.moveValLabel.string = `${resoult}`;
+  changeReqScore = (score: number): void => {
+    this.reqScoreLabel.string = score.toString();
   };
 
-  chamgeResoultLabelValue = (value: string) => {
+  changeMoveValue = (move: number): void => {
+    this.moveValLabel.string = move.toString();
+  };
+
+  changeResoultLabelValue = (value: string): void => {
     this.resoultLabel.string = value;
   };
 
-  startGame = (): void => {
-    this.curScoreLabel.string = `${this.curScore}`;
-    this.reqScoreLabel.string = `${this.reqScore}`;
-    this.moveValLabel.string = `${this.startMoveValue}`;
+  changeBonusMixCountValue = (count: number): void => {
+    this.bonusMixCountLabel.string = count.toString();
   };
 
-  restartGame = (): void => {
-    this.curMoveValue = null;
+  activeMixBtn = (status:boolean): void => {
+    this.bonusMixBtn.interactable = status;
+  };
+
+  startGame = (
+    curScore: number = 0,
+    reqScore: number = 0,
+    startMoveValue: number = 0,
+    bonusMixCount: number = 0
+  ): void => {
+    this.changeCurScore(curScore);
+    this.changeReqScore(reqScore);
+    this.changeMoveValue(startMoveValue);
+    this.changeBonusMixCountValue(bonusMixCount);
   };
 
   onLoad() {}
