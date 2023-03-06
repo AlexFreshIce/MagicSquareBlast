@@ -1,4 +1,4 @@
-import { _decorator, Component, Node } from "cc";
+import { _decorator, Component, Node, Animation } from "cc";
 import { TilesManager } from "./TilesManager";
 import { UiControl } from "./UiControl";
 const { ccclass, property } = _decorator;
@@ -30,6 +30,7 @@ export class GameManager extends Component {
   private curMoveValue: number | null = null;
   private curBonusMixCount: number = 0;
   private curBonusBombCount: number = 0;
+  private gameFieldAnimation: Animation | null = null;
 
   set curState(value: GameState) {
     switch (value) {
@@ -44,6 +45,9 @@ export class GameManager extends Component {
           this.ui.activeBtn(true, "mix");
           this.ui.activeBtn(true, "bomb");
           this.gameField.restartGame();
+        }
+        if (!this.restartGame) {
+          this.gameFieldAnimation = this.gameField.getComponent(Animation);
         }
         if (this.startMenu) {
           this.startMenu.active = false;
@@ -104,6 +108,7 @@ export class GameManager extends Component {
     if (this.curBonusBombCount > 0) {
       this.gameField.bombActivated = true;
       this.ui.activeBtn(false, "bomb");
+      this.gameFieldAnimation.play();
     }
   }
 
@@ -136,6 +141,7 @@ export class GameManager extends Component {
     if (this.gameField.bombExplosed) {
       this.gameField.bombExplosed = false;
       this.curBonusBombCount--;
+      this.gameFieldAnimation.stop();
       this.ui.changeBonusCountValue(this.curBonusBombCount, "bomb");
       if (this.curBonusBombCount !== 0) {
         this.ui.activeBtn(true, "bomb");
