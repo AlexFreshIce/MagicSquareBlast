@@ -13,8 +13,12 @@ export class UiControl extends Component {
   private resoultLabel: Label | null = null;
   @property({ type: Label })
   private bonusMixCountLabel: Label | null = null;
+  @property({ type: Label })
+  private bonusBombCountLabel: Label | null = null;
   @property({ type: Button })
   private bonusMixBtn: Button | null = null;
+  @property({ type: Button })
+  private bonusBombBtn: Button | null = null;
   // @property
 
   changeCurScore = (score: number): void => {
@@ -33,24 +37,40 @@ export class UiControl extends Component {
     this.resoultLabel.string = value;
   };
 
-  changeBonusMixCountValue = (count: number): void => {
-    this.bonusMixCountLabel.string = count.toString();
+  changeBonusCountValue = (count: number, type: string): void => {
+    switch (type) {
+      case "mix":
+        this.bonusMixCountLabel.string = count.toString();
+        break;
+      case "bomb":
+        this.bonusBombCountLabel.string = count.toString();
+        break;
+    }
   };
 
-  activeMixBtn = (status:boolean): void => {
-    this.bonusMixBtn.interactable = status;
+  activeBtn = (status: boolean, type: string): void => {
+    switch (type) {
+      case "mix":
+        this.bonusMixBtn.interactable = status;
+        break;
+      case "bomb":
+        this.bonusBombBtn.interactable = status;
+        break;
+    }
   };
 
   startGame = (
     curScore: number = 0,
     reqScore: number = 0,
     startMoveValue: number = 0,
-    bonusMixCount: number = 0
+    bonusMixCount: number = 0,
+    bonusBombCount: number = 0
   ): void => {
     this.changeCurScore(curScore);
     this.changeReqScore(reqScore);
     this.changeMoveValue(startMoveValue);
-    this.changeBonusMixCountValue(bonusMixCount);
+    this.changeBonusCountValue(bonusMixCount, "mix");
+    this.changeBonusCountValue(bonusBombCount, "bomb");
   };
 
   onLoad() {}

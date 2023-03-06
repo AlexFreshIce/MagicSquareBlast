@@ -32,6 +32,10 @@ export class TilesManager extends Component {
   public maxFieldCol: number = 9;
   public maxFieldRow: number = 9;
   public minTilesToDestr: number = 2;
+  public bombActivated: boolean = false;
+  public bombExplosed: boolean = false;
+  public explosionRadius: number = 1;
+
   private needRefillArr: boolean = false;
   private needRegenerateTiles: boolean = false;
   private needMoveTiles: boolean = false;
@@ -98,7 +102,6 @@ export class TilesManager extends Component {
         if (!this.arrTiles[i][j].drawStatus) {
           const tile = this.instantiateTileByType(this.arrTiles[i][j].type);
           this.node.addChild(tile);
-
           tile.curNumber = `${i}${j}`;
           this.setTilePos(tile, i, j);
           // tile.on(Node.EventType.TOUCH_START, this.onTilePress, this);
@@ -108,14 +111,7 @@ export class TilesManager extends Component {
     }
   };
 
-  setTilePos = (
-    tile: Node,
-    i: number,
-    j: number,
-    spy: number = 12
-    // cb1: Function | null = null,
-    // cb2: Function | null = null
-  ): void => {
+  setTilePos = (tile: Node, i: number, j: number, spy: number = 12): void => {
     const fpx = i * 46 + 32;
     const fpy = -(j * 50) - 39;
     const cb = () => {
@@ -213,24 +209,117 @@ export class TilesManager extends Component {
     // console.log(col, row, type);
   };
 
+  findNearestTiles = (
+    col: number,
+    row: number,
+    type: string,
+    cb: Function | null = null,
+    minExplCol: number | null = null,
+    maxExplCol: number | null = null,
+    minExplRow: number | null = null,
+    maxExplRow: number | null = null
+  ) => {
+    if (
+      col < 0 ||
+      col > 8 ||
+      row < 0 ||
+      row > 8 ||
+      col < minExplCol ||
+      col > maxExplCol ||
+      row < minExplRow ||
+      row > maxExplRow
+    ) {
+      return;
+    }
+    const tile = this.arrTiles[col][row];
+    if (tile && !tile.checked) {
+      this.arrWillDestroyTiles.push(tile);
+      tile.checked = true;
+      this.findNearestTiles(
+        col + 1,
+        row,
+        type,
+        null,
+        minExplCol,
+        maxExplCol,
+        minExplRow,
+        maxExplRow
+      );
+      this.findNearestTiles(
+        col - 1,
+        row,
+        type,
+        null,
+        minExplCol,
+        maxExplCol,
+        minExplRow,
+        maxExplRow
+      );
+      this.findNearestTiles(
+        col,
+        row + 1,
+        type,
+        null,
+        minExplCol,
+        maxExplCol,
+        minExplRow,
+        maxExplRow
+      );
+      this.findNearestTiles(
+        col,
+        row - 1,
+        type,
+        null,
+        minExplCol,
+        maxExplCol,
+        minExplRow,
+        maxExplRow
+      );
+    }
+    cb ? cb() : null;
+    // console.log(col, row, type);
+  };
+
   onTilePress(event: any): void {
     const col = +event.target.curNumber[0];
     const row = +event.target.curNumber[1];
     const type = event.target.name;
     this.arrWillDestroyTiles = [];
-    // console.log(event.target);
-    // console.log(this.arrTiles);
-    const cb = (): void => {
-      if (this.arrWillDestroyTiles.length >= this.minTilesToDestr) {
-        this.destroyTiles();
-      } else {
-        this.arrWillDestroyTiles.forEach((tile) => {
-          tile.checked = false;
-        });
-      }
-    };
-    this.findSameColorBorderTile(col, row, type, cb);
+
+    if (!this.bombActivated) {
+      this.findSameColorBorderTile(col, row, type, this.checkDestrTileSize);
+    } else {
+      this.bombActivated = false;
+
+      const minExplCol = col - this.explosionRadius;
+      const maxExplCol = col + this.explosionRadius;
+      const minExplRow = row - this.explosionRadius;
+      const maxExplRow = row + this.explosionRadius;
+
+      this.findNearestTiles(
+        col,
+        row,
+        type,
+        this.checkDestrTileSize,
+        minExplCol,
+        maxExplCol,
+        minExplRow,
+        maxExplRow
+      );
+
+      this.bombExplosed = true;
+    }
   }
+
+  checkDestrTileSize = (): void => {
+    if (this.arrWillDestroyTiles.length >= this.minTilesToDestr) {
+      this.destroyTiles();
+    } else {
+      this.arrWillDestroyTiles.forEach((tile) => {
+        tile.checked = false;
+      });
+    }
+  };
 
   getIndexByCurNumber = (
     item: { col: number; row: number } | null = null,
@@ -274,13 +363,11 @@ export class TilesManager extends Component {
     );
   };
 
-  mixCurrentTitles = () => {
+  mixCurrentTitles = (): void => {
     const halfArr = Math.floor(this.maxFieldRow / 2);
-    // this.arrTiles.reverse();
-    // for (let i = 0; i < 3; i++) {
-      for (let i = 0; i < this.maxFieldCol; i++) {
+    for (let i = 0; i < this.maxFieldCol; i++) {
       // if (i % 2 == 0) {
-      if (Math.random()<0.5?0:1) {
+      if (Math.random() < 0.5 ? 0 : 1) {
         this.arrTiles[i].reverse();
       }
       for (let j = 0; j < halfArr; j++) {
@@ -319,8 +406,6 @@ export class TilesManager extends Component {
     if (this.needMoveTiles) {
       this.needMoveTiles = false;
       this.moveTilesAfterDestr();
-      // console.log(this.arrTiles);
-      // console.log(this.node.children);
     }
     if (this.needRefillArr) {
       this.needRefillArr = false;

@@ -22,12 +22,14 @@ export class GameManager extends Component {
   // private _curState: GameState = GameState.GS_INIT;
 
   private restartGame: boolean = false;
-  private bonusMixCount: number = 1;
-  private reqScore: number = 35;
+  private bonusMixCount: number = 2;
+  private bonusBombCount: number = 2;
+  private reqScore: number = 40;
   private startMoveValue: number = 10;
   private curScore: number = 0;
   private curMoveValue: number | null = null;
   private curBonusMixCount: number = 0;
+  private curBonusBombCount: number = 0;
 
   set curState(value: GameState) {
     switch (value) {
@@ -39,7 +41,8 @@ export class GameManager extends Component {
         if (this.restartGame && this.gameField && this.ui) {
           this.finalResoult.active = false;
           this.restartGame = false;
-          this.ui.activeMixBtn(true);
+          this.ui.activeBtn(true, "mix");
+          this.ui.activeBtn(true, "bomb");
           this.gameField.restartGame();
         }
         if (this.startMenu) {
@@ -48,11 +51,13 @@ export class GameManager extends Component {
         this.gameField.startGame();
         this.curMoveValue = this.startMoveValue;
         this.curBonusMixCount = this.bonusMixCount;
+        this.curBonusBombCount = this.bonusBombCount;
         this.ui.startGame(
           this.curScore,
           this.reqScore,
           this.startMoveValue,
-          this.curBonusMixCount
+          this.curBonusMixCount,
+          this.curBonusBombCount
         );
         break;
 
@@ -66,7 +71,7 @@ export class GameManager extends Component {
     // this._curState = value;
   }
 
-  init():void {
+  init(): void {
     if (this.finalResoult) {
       this.finalResoult.active = false;
     }
@@ -75,23 +80,30 @@ export class GameManager extends Component {
     }
   }
 
-  onStartButtonClicked():void {
+  onStartButtonClicked(): void {
     this.curState = GameState.GS_PLAYING;
   }
 
-  onRestartButtonClicked():void {
+  onRestartButtonClicked(): void {
     this.restartGame = true;
     this.curState = GameState.GS_PLAYING;
   }
 
-  onMixButtonClicked():void {
+  onMixButtonClicked(): void {
     if (this.curBonusMixCount > 0) {
       this.curBonusMixCount--;
       this.gameField.mixCurrentTitles();
-      this.ui.changeBonusMixCountValue(this.curBonusMixCount);
-    } 
+      this.ui.changeBonusCountValue(this.curBonusMixCount, "mix");
+    }
     if (this.curBonusMixCount === 0) {
-      this.ui.activeMixBtn(false);
+      this.ui.activeBtn(false, "mix");
+    }
+  }
+
+  onBombButtonClicked(): void {
+    if (this.curBonusBombCount > 0) {
+      this.gameField.bombActivated = true;
+      this.ui.activeBtn(false, "bomb");
     }
   }
 
@@ -120,6 +132,14 @@ export class GameManager extends Component {
       this.curMoveValue = null;
       this.ui.changeResoultLabelValue("You Lose");
       this.curState = GameState.GS_END;
+    }
+    if (this.gameField.bombExplosed) {
+      this.gameField.bombExplosed = false;
+      this.curBonusBombCount--;
+      this.ui.changeBonusCountValue(this.curBonusBombCount, "bomb");
+      if (this.curBonusBombCount !== 0) {
+        this.ui.activeBtn(true, "bomb");
+      }
     }
   }
 }
